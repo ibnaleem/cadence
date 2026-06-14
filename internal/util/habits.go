@@ -1,6 +1,9 @@
 package util
 
-import "database/sql"
+import (
+	"database/sql"
+	"encoding/json"
+)
 
 type Habit struct {
 	ID          int
@@ -10,13 +13,54 @@ type Habit struct {
 	CreatedAt   string
 } // Habit
 
-func AddHabit(db *sql.DB, name, description, frequency string) error {
+func AddHabit(db *sql.DB, name, description, frequency string, embedding []float32) error {
+	var embJSON []byte
+	if embedding != nil {
+		embJSON, _ = json.Marshal(embedding)
+	} // if
 	_, err := db.Exec(
-		`INSERT INTO habits (name, description, frequency) VALUES (?, ?, ?)`,
-		name, description, frequency,
+		`INSERT INTO habits (name, description, frequency, embedding) VALUES (?, ?, ?, ?)`,
+		name, description, frequency, embJSON,
 	)
 	return err
 } // AddHabit
+
+func FindSimilarHabit(db *sql.DB, embedding []float32, threshold float32) (*Habit, float32, error) {
+	rows, err := db.Query(`SELECT id, name, description, frequency, created_at, embedding FROM habits WHERE embedding IS NOT NULL`)
+	if err != nil {
+		return nil, 0, err
+	} // if
+	defer rows.Close()
+
+	var best *Habit
+	var bestSim float32
+
+	for rows.Next() {
+		var h Habit
+		var embJSON string
+		if err := rows.Scan(&h.ID, &h.Name, &h.Description, &h.Frequency, &h.CreatedAt, &embJSON); err != nil {
+			return nil, 0, err
+		} // if
+		var vec []float32
+		if err := json.Unmarshal([]byte(embJSON), &vec); err != nil {
+			continue
+		} // if
+		if sim := CosineSimilarity(embedding, vec); sim > bestSim {
+			bestSim = sim
+			h2 := h
+			best = &h2
+		} // if
+	} // for
+
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
+	} // if
+	if best == nil || bestSim < threshold {
+		return nil, bestSim, nil
+	} // if
+
+	return best, bestSim, nil
+} // FindSimilarHabit
 
 func LogHabit(db *sql.DB, habitID int) error {
 	_, err := db.Exec(
