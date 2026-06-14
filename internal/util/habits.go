@@ -3,6 +3,7 @@ package util
 import (
 	"database/sql"
 	"encoding/json"
+	"time"
 )
 
 type Habit struct {
@@ -130,6 +131,59 @@ func WeeklyLogs(db *sql.DB) (map[int]int, error) {
 
 	return counts, rows.Err()
 } // WeeklyLogs
+
+func AllStreaks(db *sql.DB) (map[int]int, error) {
+	rows, err := db.Query(`
+		SELECT habit_id, logged_at FROM habit_logs
+		GROUP BY habit_id, logged_at
+		ORDER BY habit_id, logged_at DESC
+	`)
+	if err != nil {
+		return nil, err
+	} // if
+	defer rows.Close()
+
+	byHabit := make(map[int][]string)
+	for rows.Next() {
+		var id int
+		var date string
+		if err := rows.Scan(&id, &date); err != nil {
+			return nil, err
+		} // if
+		byHabit[id] = append(byHabit[id], date)
+	} // for
+	if err := rows.Err(); err != nil {
+		return nil, err
+	} // if
+
+	streaks := make(map[int]int)
+	for id, dates := range byHabit {
+		streaks[id] = calcStreak(dates)
+	} // for
+	return streaks, nil
+} // AllStreaks
+
+func calcStreak(dates []string) int {
+	if len(dates) == 0 {
+		return 0
+	} // if
+	today := time.Now().Format("2006-01-02")
+	yesterday := time.Now().AddDate(0, 0, -1).Format("2006-01-02")
+	if dates[0] != today && dates[0] != yesterday {
+		return 0
+	} // if
+	streak := 1
+	for i := 1; i < len(dates); i++ {
+		prev, _ := time.Parse("2006-01-02", dates[i-1])
+		curr, _ := time.Parse("2006-01-02", dates[i])
+		if prev.AddDate(0, 0, -1).Equal(curr) {
+			streak++
+		} else {
+			break
+		} // if
+	} // for
+	return streak
+} // calcStreak
 
 func ListHabits(db *sql.DB) ([]Habit, error) {
 	rows, err := db.Query(`SELECT id, name, description, frequency, created_at FROM habits ORDER BY id`)
