@@ -107,6 +107,30 @@ func TodayStatus(db *sql.DB) ([]HabitStatus, error) {
 	return statuses, rows.Err()
 } // TodayStatus
 
+func WeeklyLogs(db *sql.DB) (map[int]int, error) {
+	rows, err := db.Query(`
+		SELECT habit_id, COUNT(*) FROM habit_logs
+		WHERE logged_at >= DATE('now', 'weekday 0', '-7 days')
+		  AND logged_at <= DATE('now')
+		GROUP BY habit_id
+	`)
+	if err != nil {
+		return nil, err
+	} // if
+	defer rows.Close()
+
+	counts := make(map[int]int)
+	for rows.Next() {
+		var id, count int
+		if err := rows.Scan(&id, &count); err != nil {
+			return nil, err
+		} // if
+		counts[id] = count
+	} // for
+
+	return counts, rows.Err()
+} // WeeklyLogs
+
 func ListHabits(db *sql.DB) ([]Habit, error) {
 	rows, err := db.Query(`SELECT id, name, description, frequency, created_at FROM habits ORDER BY id`)
 	if err != nil {
