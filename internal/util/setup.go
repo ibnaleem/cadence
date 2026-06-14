@@ -48,6 +48,12 @@ func SetupSchema(db *sql.DB) error {
 			logged_at  DATE    NOT NULL DEFAULT CURRENT_DATE
 		);
 	`)
+	if err != nil {
+		return err
+	} // if
 
-	return err
+	// ponytail: ignore error — SQLite has no ADD COLUMN IF NOT EXISTS
+	db.Exec(`ALTER TABLE habits ADD COLUMN embedding TEXT`)
+
+	return nil
 } // SetupSchema
