@@ -37,7 +37,12 @@ var doneCmd = &cobra.Command{
 		} else {
 			embedding, embErr := util.Embed(args[0])
 			if embErr != nil {
-				return fmt.Errorf("VOYAGE_API_KEY required for name-based lookup; use `cadence done <id>`")
+				return fmt.Errorf(
+					"ollama not reachable — name-based lookup requires it.\n\n" +
+					"  Install:  https://ollama.com/download\n" +
+					"  Pull model: ollama pull embeddinggemma\n\n" +
+					"Or use a habit ID instead: cadence done <id>",
+				)
 			} // if
 
 			habit, sim, err := util.FindSimilarHabit(db, embedding, util.SimilarityThresholdMatch)
