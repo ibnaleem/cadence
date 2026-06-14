@@ -108,9 +108,30 @@ func DeleteHabit(db *sql.DB, habitID int) error {
 	return tx.Commit()
 } // DeleteHabit
 
-func LogHabit(db *sql.DB, habitID int) (bool, error) {
+func LogHabit(db *sql.DB, habitID int, date string) (bool, error) {
+	var res sql.Result
+	var err error
+	if date == "" {
+		res, err = db.Exec(
+			`INSERT OR IGNORE INTO habit_logs (habit_id) VALUES (?)`,
+			habitID,
+		)
+	} else {
+		res, err = db.Exec(
+			`INSERT OR IGNORE INTO habit_logs (habit_id, logged_at) VALUES (?, ?)`,
+			habitID, date,
+		)
+	}
+	if err != nil {
+		return false, err
+	}
+	n, _ := res.RowsAffected()
+	return n > 0, nil
+} // LogHabit
+
+func UnlogHabit(db *sql.DB, habitID int) (bool, error) {
 	res, err := db.Exec(
-		`INSERT OR IGNORE INTO habit_logs (habit_id) VALUES (?)`,
+		`DELETE FROM habit_logs WHERE habit_id = ? AND logged_at = CURRENT_DATE`,
 		habitID,
 	)
 	if err != nil {
@@ -118,7 +139,7 @@ func LogHabit(db *sql.DB, habitID int) (bool, error) {
 	}
 	n, _ := res.RowsAffected()
 	return n > 0, nil
-} // LogHabit
+} // UnlogHabit
 
 func HabitNameByID(db *sql.DB, habitID int) (string, error) {
 	var name string
@@ -129,7 +150,12 @@ func HabitNameByID(db *sql.DB, habitID int) (string, error) {
 func TodayStatus(db *sql.DB) ([]HabitStatus, error) {
 	rows, err := db.Query(`
 		SELECT id, name, description, frequency, created_at,
-			EXISTS(SELECT 1 FROM habit_logs WHERE habit_id = habits.id AND logged_at = CURRENT_DATE)
+			CASE
+				WHEN frequency = 'weekly' THEN
+					EXISTS(SELECT 1 FROM habit_logs WHERE habit_id = habits.id AND logged_at >= DATE('now', '-6 days'))
+				ELSE
+					EXISTS(SELECT 1 FROM habit_logs WHERE habit_id = habits.id AND logged_at = CURRENT_DATE)
+			END
 		FROM habits ORDER BY id
 	`)
 	if err != nil {
