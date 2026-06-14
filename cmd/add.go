@@ -30,9 +30,14 @@ var addCmd = &cobra.Command{
 			return err
 		} // if
 
-		embedding, _ := util.Embed(args[0])
+		embedding, embedErr := util.Embed(args[0])
+		if embedErr != nil {
+			fmt.Println(theme.Yellow("!") + theme.Gray(" similarity check skipped — ollama not reachable"))
+		} else {
+			if err := util.BackfillEmbeddings(db); err != nil {
+				fmt.Println(theme.Yellow("!") + theme.Gray(" could not backfill embeddings: "+err.Error()))
+			} // if
 
-		if embedding != nil {
 			similar, sim, err := util.FindSimilarHabit(db, embedding, util.SimilarityThresholdWarn)
 			if err != nil {
 				return err
@@ -48,7 +53,7 @@ var addCmd = &cobra.Command{
 					return nil
 				} // if
 			} // if
-		} // if
+		} // else
 
 		if err := util.AddHabit(db, args[0], description, frequency, embedding); err != nil {
 			return err

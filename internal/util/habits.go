@@ -68,6 +68,40 @@ func FindSimilarHabit(db *sql.DB, embedding []float32, threshold float32) (*Habi
 	return best, bestSim, nil
 } // FindSimilarHabit
 
+func BackfillEmbeddings(db *sql.DB) error {
+	rows, err := db.Query(`SELECT id, name FROM habits WHERE embedding IS NULL`)
+	if err != nil {
+		return err
+	} // if
+	defer rows.Close()
+
+	var ids []int
+	var names []string
+	for rows.Next() {
+		var id int
+		var name string
+		if err := rows.Scan(&id, &name); err != nil {
+			return err
+		} // if
+		ids = append(ids, id)
+		names = append(names, name)
+	} // for
+	if err := rows.Err(); err != nil {
+		return err
+	} // if
+
+	for i, id := range ids {
+		vec, err := Embed(names[i])
+		if err != nil {
+			return err
+		} // if
+		embJSON, _ := json.Marshal(vec)
+		db.Exec(`UPDATE habits SET embedding = ? WHERE id = ?`, string(embJSON), id)
+	} // for
+
+	return nil
+} // BackfillEmbeddings
+
 func GetHabit(db *sql.DB, id int) (*Habit, error) {
 	var h Habit
 	err := db.QueryRow(`SELECT id, name, description, frequency, created_at FROM habits WHERE id = ?`, id).
