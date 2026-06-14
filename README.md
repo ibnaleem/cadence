@@ -1,3 +1,4 @@
+
 # cadence
 
 Terminal habit tracker. Tracks daily and weekly habits with streaks and history, all stored locally in SQLite.
@@ -28,6 +29,11 @@ cadence · Show up. Every day.
 
 Requires Go 1.25+ and [Ollama](https://ollama.com/download) (only needed for name-based habit lookup).
 
+#### Quick one-liner
+```bash
+go install https://github.com/ibnaleem/cadence@latest
+```
+#### Manual
 ```bash
 git clone https://github.com/ibnaleem/cadence
 cd cadence
@@ -37,7 +43,7 @@ go install .
 Pull the embedding model used by `done <name>` and the duplicate check in `add`:
 
 ```bash
-ollama pull embeddinggemma
+ollama pull embeddinggemma:latest
 ```
 
 ## Commands
@@ -113,3 +119,10 @@ go run .         # run
 go test ./...    # test
 go vet ./...     # vet
 ```
+
+## LICENSE
+This project is licensed under the GNU General Public License - see the [LICENSE](https://github.com/ibnaleem/gosearch/blob/main/LICENSE) file for details.
+
+## Support
+[![BuyMeACoffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/ibnaleem)
+[![Thanks.dev](https://img.shields.io/badge/thanks.dev-0a0a0a?style=for-the-badge&logo=tv-time&logoColor=white)](https://thanks.dev/u/gh/ibnaleem)
