@@ -211,7 +211,7 @@ func calcStreak(dates []string) int {
 	if len(dates) == 0 {
 		return 0
 	} // if
-	now := time.Now().UTC()
+	now := time.Now()
 	today := now.Format("2006-01-02")
 	yesterday := now.AddDate(0, 0, -1).Format("2006-01-02")
 	if dates[0] != today && dates[0] != yesterday {
