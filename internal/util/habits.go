@@ -115,9 +115,11 @@ func GetHabit(db *sql.DB, id int) (*Habit, error) {
 
 func UpdateHabit(db *sql.DB, id int, name, description string, embedding []float32) error {
 	if embedding != nil {
-		var embJSON []byte
-		embJSON, _ = json.Marshal(embedding)
-		_, err := db.Exec(
+		embJSON, err := json.Marshal(embedding)
+		if err != nil {
+			return fmt.Errorf("marshal embedding: %w", err)
+		}
+		_, err = db.Exec(
 			`UPDATE habits SET name = ?, description = ?, embedding = ? WHERE id = ?`,
 			name, description, embJSON, id,
 		)
@@ -132,12 +134,11 @@ func DeleteHabit(db *sql.DB, habitID int) error {
 	if err != nil {
 		return err
 	}
+	defer tx.Rollback()
 	if _, err := tx.Exec(`DELETE FROM habit_logs WHERE habit_id = ?`, habitID); err != nil {
-		tx.Rollback()
 		return err
 	}
 	if _, err := tx.Exec(`DELETE FROM habits WHERE id = ?`, habitID); err != nil {
-		tx.Rollback()
 		return err
 	}
 	return tx.Commit()

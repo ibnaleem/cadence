@@ -1,6 +1,6 @@
 # cadence
 
-Terminal-based habit tracker. Tracks daily and weekly habits, streaks, and completion history — all local, no account required.
+Terminal habit tracker. Tracks daily and weekly habits with streaks and history, all stored locally in SQLite.
 
 ```
 cadence · Show up. Every day.
@@ -26,7 +26,7 @@ cadence · Show up. Every day.
 
 ## Install
 
-**Prerequisites:** Go 1.25+, [Ollama](https://ollama.com/download) (for name-based habit lookup).
+Requires Go 1.25+ and [Ollama](https://ollama.com/download) (only needed for name-based habit lookup).
 
 ```bash
 git clone https://github.com/ibnaleem/cadence
@@ -34,13 +34,13 @@ cd cadence
 go install .
 ```
 
-Pull the embedding model (used by `done <name>` and `add` similarity check):
+Pull the embedding model used by `done <name>` and the duplicate check in `add`:
 
 ```bash
 ollama pull embeddinggemma
 ```
 
-## Usage
+## Commands
 
 ```
 cadence            Show today's dashboard
@@ -62,13 +62,13 @@ cadence add "Read" --description "30 mins before bed" --frequency weekly
 
 Flags: `--description / -d`, `--frequency / -f` (default: `daily`).
 
-If Ollama is running, `add` checks for similar existing habits before inserting and prompts you if one is found above the similarity threshold.
+If Ollama is running, `add` checks whether a similar habit already exists before inserting. If the similarity score crosses the threshold, it prompts you before proceeding.
 
 ### done
 
 ```bash
-cadence done 1              # by ID (fast, no Ollama needed)
-cadence done "drink water"  # by name — uses cosine similarity to find the best match
+cadence done 1              # by ID, no Ollama needed
+cadence done "drink water"  # by name, uses cosine similarity to find the best match
 ```
 
 ### edit
@@ -85,7 +85,7 @@ cadence edit 1 --name "Drink 8 glasses" --description "Before every meal"
 cadence delete 1
 ```
 
-Removes the habit and all its completion history.
+Deletes the habit and all its completions.
 
 ### streak
 
@@ -99,17 +99,17 @@ cadence streak
   Meditate        no streak
 ```
 
-A streak counts consecutive days ending today or yesterday. Missing a day resets it to zero.
+A streak counts consecutive days ending today or yesterday. Miss a day and it resets.
 
 ## Data
 
-Stored in `~/.cadence/cadence.db` (SQLite). No cloud sync, no telemetry.
+Everything lives in `~/.cadence/cadence.db`. No cloud sync, no telemetry, nothing leaving your machine.
 
 ## Build
 
-| Task  | Command          |
-|-------|------------------|
-| Build | `go build ./...` |
-| Run   | `go run .`       |
-| Test  | `go test ./...`  |
-| Vet   | `go vet ./...`   |
+```bash
+go build ./...   # build
+go run .         # run
+go test ./...    # test
+go vet ./...     # vet
+```
