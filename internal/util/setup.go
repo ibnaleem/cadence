@@ -45,7 +45,8 @@ func SetupSchema(db *sql.DB) error {
 		CREATE TABLE IF NOT EXISTS habit_logs (
 			id         INTEGER PRIMARY KEY,
 			habit_id   INTEGER NOT NULL REFERENCES habits(id),
-			logged_at  DATE    NOT NULL DEFAULT CURRENT_DATE
+			logged_at  DATE    NOT NULL DEFAULT CURRENT_DATE,
+			UNIQUE(habit_id, logged_at)
 		);
 	`)
 	if err != nil {

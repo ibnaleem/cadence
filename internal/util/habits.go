@@ -91,12 +91,16 @@ func DeleteHabit(db *sql.DB, habitID int) error {
 	return err
 } // DeleteHabit
 
-func LogHabit(db *sql.DB, habitID int) error {
-	_, err := db.Exec(
-		`INSERT INTO habit_logs (habit_id) VALUES (?)`,
+func LogHabit(db *sql.DB, habitID int) (bool, error) {
+	res, err := db.Exec(
+		`INSERT OR IGNORE INTO habit_logs (habit_id) VALUES (?)`,
 		habitID,
 	)
-	return err
+	if err != nil {
+		return false, err
+	}
+	n, _ := res.RowsAffected()
+	return n > 0, nil
 } // LogHabit
 
 func HabitNameByID(db *sql.DB, habitID int) (string, error) {
