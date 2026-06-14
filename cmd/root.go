@@ -134,6 +134,7 @@ func init() {
 	rootCmd.AddCommand(doneCmd)
 	rootCmd.AddCommand(streakCmd)
 	rootCmd.AddCommand(deleteCmd)
+	rootCmd.AddCommand(editCmd)
 } // init
 
 func Execute() {
