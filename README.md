@@ -1,3 +1,4 @@
+<img src="https://github.com/ibnaleem/cadence/actions/workflows/go.yml/badge.svg?event=push" alt="GitHub Actions Badge"> 
 
 # cadence
 
