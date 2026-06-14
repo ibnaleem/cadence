@@ -44,6 +44,9 @@ func Embed(text string) ([]float32, error) {
 } // Embed
 
 func CosineSimilarity(a, b []float32) float32 {
+	if len(a) != len(b) || len(a) == 0 {
+		return 0
+	}
 	var dot, normA, normB float32
 	for i := range a {
 		dot += a[i] * b[i]
