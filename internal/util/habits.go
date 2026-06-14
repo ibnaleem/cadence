@@ -3,6 +3,7 @@ package util
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"time"
 )
 
@@ -80,9 +81,11 @@ func GetHabit(db *sql.DB, id int) (*Habit, error) {
 
 func UpdateHabit(db *sql.DB, id int, name, description string, embedding []float32) error {
 	if embedding != nil {
-		var embJSON []byte
-		embJSON, _ = json.Marshal(embedding)
-		_, err := db.Exec(
+		embJSON, err := json.Marshal(embedding)
+		if err != nil {
+			return fmt.Errorf("marshal embedding: %w", err)
+		}
+		_, err = db.Exec(
 			`UPDATE habits SET name = ?, description = ?, embedding = ? WHERE id = ?`,
 			name, description, embJSON, id,
 		)
@@ -97,12 +100,11 @@ func DeleteHabit(db *sql.DB, habitID int) error {
 	if err != nil {
 		return err
 	}
+	defer tx.Rollback()
 	if _, err := tx.Exec(`DELETE FROM habit_logs WHERE habit_id = ?`, habitID); err != nil {
-		tx.Rollback()
 		return err
 	}
 	if _, err := tx.Exec(`DELETE FROM habits WHERE id = ?`, habitID); err != nil {
-		tx.Rollback()
 		return err
 	}
 	return tx.Commit()
@@ -116,7 +118,10 @@ func LogHabit(db *sql.DB, habitID int) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	n, _ := res.RowsAffected()
+	n, err := res.RowsAffected()
+	if err != nil {
+		return false, fmt.Errorf("rows affected: %w", err)
+	}
 	return n > 0, nil
 } // LogHabit
 
@@ -211,7 +216,7 @@ func calcStreak(dates []string) int {
 	if len(dates) == 0 {
 		return 0
 	} // if
-	now := time.Now()
+	now := time.Now().UTC()
 	today := now.Format("2006-01-02")
 	yesterday := now.AddDate(0, 0, -1).Format("2006-01-02")
 	if dates[0] != today && dates[0] != yesterday {
