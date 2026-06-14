@@ -61,10 +61,57 @@ var rootCmd = &cobra.Command{
 			} // if
 		} // for
 
+		weekly, err := util.WeeklyLogs(db)
+		if err != nil {
+			return err
+		} // if
+
+		totalWeek := 0
+		for _, c := range weekly {
+			totalWeek += c
+		} // for
+
+		fmt.Println()
+		fmt.Println("  " + theme.Bold("This week") + "  " + theme.Gray(weekLabel(totalWeek)))
+		fmt.Println()
+
+		for _, h := range habits {
+			count := weekly[h.ID]
+			dots := weekDots(count, 7)
+			fmt.Printf("  %s  %-20s  %s  %s\n",
+				dots,
+				h.Name,
+				theme.Cyan(fmt.Sprintf("%dx", count)),
+				theme.Gray("["+h.Frequency+"]"),
+			)
+		} // for
+
 		fmt.Println()
 		return nil
 	}, // RunE
 } // &cobra.Command
+
+func weekDots(count, max int) string {
+	if count > max {
+		count = max
+	} // if
+	return theme.Green(strings.Repeat("●", count)) + theme.Gray(strings.Repeat("●", max-count))
+} // weekDots
+
+func weekLabel(total int) string {
+	switch {
+	case total == 0:
+		return "nothing logged yet — let's go!"
+	case total < 5:
+		return "warming up 🔥"
+	case total < 10:
+		return "building momentum ⚡"
+	case total < 20:
+		return "on a roll 🚀"
+	default:
+		return "unstoppable 🏆"
+	} // switch
+} // weekLabel
 
 func progressBar(done, total, width int) string {
 	filled := (done * width) / total
