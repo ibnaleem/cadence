@@ -13,6 +13,11 @@ type Habit struct {
 	CreatedAt   string
 } // Habit
 
+type HabitStatus struct {
+	Habit
+	DoneToday bool
+} // HabitStatus
+
 func AddHabit(db *sql.DB, name, description, frequency string, embedding []float32) error {
 	var embJSON []byte
 	if embedding != nil {
@@ -75,6 +80,32 @@ func HabitNameByID(db *sql.DB, habitID int) (string, error) {
 	err := db.QueryRow(`SELECT name FROM habits WHERE id = ?`, habitID).Scan(&name)
 	return name, err
 } // HabitNameByID
+
+func TodayStatus(db *sql.DB) ([]HabitStatus, error) {
+	rows, err := db.Query(`
+		SELECT id, name, description, frequency, created_at,
+			EXISTS(SELECT 1 FROM habit_logs WHERE habit_id = habits.id AND logged_at = CURRENT_DATE)
+		FROM habits ORDER BY id
+	`)
+	if err != nil {
+		return nil, err
+	} // if
+	defer rows.Close()
+
+	var statuses []HabitStatus
+
+	for rows.Next() {
+		var s HabitStatus
+		var done int
+		if err := rows.Scan(&s.ID, &s.Name, &s.Description, &s.Frequency, &s.CreatedAt, &done); err != nil {
+			return nil, err
+		} // if
+		s.DoneToday = done > 0
+		statuses = append(statuses, s)
+	} // for
+
+	return statuses, rows.Err()
+} // TodayStatus
 
 func ListHabits(db *sql.DB) ([]Habit, error) {
 	rows, err := db.Query(`SELECT id, name, description, frequency, created_at FROM habits ORDER BY id`)
