@@ -1,0 +1,54 @@
+package theme
+
+type Theme struct {
+	Reset     string
+	Bold      string
+	Underline string
+	Red       string
+	Green     string
+	Yellow    string
+	Blue      string
+	Magenta   string
+	Cyan      string
+	White     string
+	Gray      string
+}
+
+var LightTheme = Theme{
+	Reset:     "\033[0m",
+	Bold:      "\033[1m",
+	Underline: "\033[4m",
+	Red:       "\033[31m",
+	Green:     "\033[32m",
+	Yellow:    "\033[33m",
+	Blue:      "\033[34m",
+	Magenta:   "\033[35m",
+	Cyan:      "\033[36m",
+	White:     "\033[37m",
+	Gray:      "\033[90m",
+}
+
+var DarkTheme = Theme{
+	Reset:     "\033[0m",
+	Bold:      "\033[1m",
+	Underline: "\033[4m",
+	Red:       "\033[91m",
+	Green:     "\033[92m",
+	Yellow:    "\033[93m",
+	Blue:      "\033[94m",
+	Magenta:   "\033[95m",
+	Cyan:      "\033[96m",
+	White:     "\033[97m",
+	Gray:      "\033[37m",
+}
+
+func Red(s string)       string { return DarkTheme.Red + s + DarkTheme.Reset }
+func Green(s string)     string { return DarkTheme.Green + s + DarkTheme.Reset }
+func Yellow(s string)    string { return DarkTheme.Yellow + s + DarkTheme.Reset }
+func Blue(s string)      string { return DarkTheme.Blue + s + DarkTheme.Reset }
+func Magenta(s string)   string { return DarkTheme.Magenta + s + DarkTheme.Reset }
+func Cyan(s string)      string { return DarkTheme.Cyan + s + DarkTheme.Reset }
+func White(s string)     string { return DarkTheme.White + s + DarkTheme.Reset }
+func Gray(s string)      string { return DarkTheme.Gray + s + DarkTheme.Reset }
+func Bold(s string)      string { return DarkTheme.Bold + s + DarkTheme.Reset }
+func Underline(s string) string { return DarkTheme.Underline + s + DarkTheme.Reset }
