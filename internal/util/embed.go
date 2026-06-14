@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"math"
 	"net/http"
+	"time"
 )
 
 const SimilarityThresholdWarn  = float32(0.85)
@@ -20,9 +22,11 @@ type ollamaEmbedResponse struct {
 	Embeddings [][]float32 `json:"embeddings"`
 }
 
+var ollamaClient = &http.Client{Timeout: 10 * time.Second}
+
 func Embed(text string) ([]float32, error) {
 	body, _ := json.Marshal(ollamaEmbedRequest{Model: "embeddinggemma", Input: []string{text}})
-	resp, err := http.Post("http://localhost:11434/api/embed", "application/json", bytes.NewReader(body))
+	resp, err := ollamaClient.Post("http://localhost:11434/api/embed", "application/json", bytes.NewReader(body))
 	if err != nil {
 		return nil, fmt.Errorf("ollama not reachable: %w", err)
 	} // if
@@ -33,7 +37,7 @@ func Embed(text string) ([]float32, error) {
 	} // if
 
 	var result ollamaEmbedResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, 10<<20)).Decode(&result); err != nil {
 		return nil, err
 	} // if
 	if len(result.Embeddings) == 0 {
