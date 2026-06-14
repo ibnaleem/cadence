@@ -1,8 +1,11 @@
 package cmd
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/ibnaleem/cadence/internal/theme"
 	"github.com/ibnaleem/cadence/internal/util"
@@ -30,8 +33,10 @@ var doneCmd = &cobra.Command{
 
 		if id, err := strconv.Atoi(args[0]); err == nil {
 			habitName, err = util.HabitNameByID(db, id)
-			if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
 				return fmt.Errorf("no habit with id %d — run `cadence list` to see habit IDs", id)
+			} else if err != nil {
+				return fmt.Errorf("looking up habit %d: %w", id, err)
 			} // if
 			habitID = id
 		} else {
@@ -58,17 +63,40 @@ var doneCmd = &cobra.Command{
 			habitName = habit.Name
 		} // else
 
-		inserted, err := util.LogHabit(db, habitID)
+		dateStr, _ := cmd.Flags().GetString("date")
+		if dateStr != "" {
+			parsed, err := time.Parse("2006-01-02", dateStr)
+			if err != nil {
+				return fmt.Errorf("invalid date %q — use YYYY-MM-DD format", dateStr)
+			} // if
+			if parsed.After(time.Now()) {
+				return fmt.Errorf("cannot backfill a future date: %s", dateStr)
+			} // if
+		} // if
+
+		inserted, err := util.LogHabit(db, habitID, dateStr)
 		if err != nil {
 			return err
 		} // if
 
-		if inserted {
-			fmt.Println(theme.Green("✓") + " logged: " + theme.Bold(habitName))
+		if dateStr != "" {
+			if inserted {
+				fmt.Println(theme.Green("✓") + " logged " + theme.Bold(habitName) + theme.Gray(" for "+dateStr))
+			} else {
+				fmt.Println(theme.Yellow("!") + " already logged " + theme.Bold(habitName) + theme.Gray(" for "+dateStr))
+			} // if
 		} else {
-			fmt.Println(theme.Yellow("!") + " already logged today: " + theme.Bold(habitName))
+			if inserted {
+				fmt.Println(theme.Green("✓") + " logged: " + theme.Bold(habitName))
+			} else {
+				fmt.Println(theme.Yellow("!") + " already logged today: " + theme.Bold(habitName))
+			} // if
 		} // if
 
 		return nil
 	}, // RunE
 } // &cobra.Command
+
+func init() {
+	doneCmd.Flags().StringP("date", "d", "", "backfill date (YYYY-MM-DD)")
+} // init
