@@ -1,7 +1,10 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/ibnaleem/cadence/internal/theme"
 	"github.com/ibnaleem/cadence/internal/util"
@@ -27,7 +30,27 @@ var addCmd = &cobra.Command{
 			return err
 		} // if
 
-		if err := util.AddHabit(db, args[0], description, frequency); err != nil {
+		embedding, _ := util.Embed(args[0])
+
+		if embedding != nil {
+			similar, sim, err := util.FindSimilarHabit(db, embedding, util.SimilarityThresholdWarn)
+			if err != nil {
+				return err
+			} // if
+			if similar != nil {
+				fmt.Printf(
+					"%s \"%s\" is %.0f%% similar to existing habit \"%s\". Add anyway? [y/N] ",
+					theme.Yellow("!"), args[0], sim*100, theme.Bold(similar.Name),
+				)
+				ans, _ := bufio.NewReader(os.Stdin).ReadString('\n')
+				if !strings.EqualFold(strings.TrimSpace(ans), "y") {
+					fmt.Println(theme.Gray("aborted."))
+					return nil
+				} // if
+			} // if
+		} // if
+
+		if err := util.AddHabit(db, args[0], description, frequency, embedding); err != nil {
 			return err
 		} // if
 
