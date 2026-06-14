@@ -78,7 +78,16 @@ func GetHabit(db *sql.DB, id int) (*Habit, error) {
 	return &h, nil
 } // GetHabit
 
-func UpdateHabit(db *sql.DB, id int, name, description string) error {
+func UpdateHabit(db *sql.DB, id int, name, description string, embedding []float32) error {
+	if embedding != nil {
+		var embJSON []byte
+		embJSON, _ = json.Marshal(embedding)
+		_, err := db.Exec(
+			`UPDATE habits SET name = ?, description = ?, embedding = ? WHERE id = ?`,
+			name, description, embJSON, id,
+		)
+		return err
+	}
 	_, err := db.Exec(`UPDATE habits SET name = ?, description = ? WHERE id = ?`, name, description, id)
 	return err
 } // UpdateHabit
