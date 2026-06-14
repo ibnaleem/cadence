@@ -69,6 +69,40 @@ func FindSimilarHabit(db *sql.DB, embedding []float32, threshold float32) (*Habi
 	return best, bestSim, nil
 } // FindSimilarHabit
 
+func BackfillEmbeddings(db *sql.DB) error {
+	rows, err := db.Query(`SELECT id, name FROM habits WHERE embedding IS NULL`)
+	if err != nil {
+		return err
+	} // if
+	defer rows.Close()
+
+	var ids []int
+	var names []string
+	for rows.Next() {
+		var id int
+		var name string
+		if err := rows.Scan(&id, &name); err != nil {
+			return err
+		} // if
+		ids = append(ids, id)
+		names = append(names, name)
+	} // for
+	if err := rows.Err(); err != nil {
+		return err
+	} // if
+
+	for i, id := range ids {
+		vec, err := Embed(names[i])
+		if err != nil {
+			return err
+		} // if
+		embJSON, _ := json.Marshal(vec)
+		db.Exec(`UPDATE habits SET embedding = ? WHERE id = ?`, string(embJSON), id)
+	} // for
+
+	return nil
+} // BackfillEmbeddings
+
 func GetHabit(db *sql.DB, id int) (*Habit, error) {
 	var h Habit
 	err := db.QueryRow(`SELECT id, name, description, frequency, created_at FROM habits WHERE id = ?`, id).
@@ -110,9 +144,33 @@ func DeleteHabit(db *sql.DB, habitID int) error {
 	return tx.Commit()
 } // DeleteHabit
 
-func LogHabit(db *sql.DB, habitID int) (bool, error) {
+func LogHabit(db *sql.DB, habitID int, date string) (bool, error) {
+	var res sql.Result
+	var err error
+	if date == "" {
+		res, err = db.Exec(
+			`INSERT OR IGNORE INTO habit_logs (habit_id) VALUES (?)`,
+			habitID,
+		)
+	} else {
+		res, err = db.Exec(
+			`INSERT OR IGNORE INTO habit_logs (habit_id, logged_at) VALUES (?, ?)`,
+			habitID, date,
+		)
+	}
+	if err != nil {
+		return false, err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return false, fmt.Errorf("reading rows affected: %w", err)
+	}
+	return n > 0, nil
+} // LogHabit
+
+func UnlogHabit(db *sql.DB, habitID int) (bool, error) {
 	res, err := db.Exec(
-		`INSERT OR IGNORE INTO habit_logs (habit_id) VALUES (?)`,
+		`DELETE FROM habit_logs WHERE habit_id = ? AND logged_at = CURRENT_DATE`,
 		habitID,
 	)
 	if err != nil {
@@ -120,10 +178,10 @@ func LogHabit(db *sql.DB, habitID int) (bool, error) {
 	}
 	n, err := res.RowsAffected()
 	if err != nil {
-		return false, fmt.Errorf("rows affected: %w", err)
+		return false, fmt.Errorf("reading rows affected: %w", err)
 	}
 	return n > 0, nil
-} // LogHabit
+} // UnlogHabit
 
 func HabitNameByID(db *sql.DB, habitID int) (string, error) {
 	var name string
@@ -134,7 +192,12 @@ func HabitNameByID(db *sql.DB, habitID int) (string, error) {
 func TodayStatus(db *sql.DB) ([]HabitStatus, error) {
 	rows, err := db.Query(`
 		SELECT id, name, description, frequency, created_at,
-			EXISTS(SELECT 1 FROM habit_logs WHERE habit_id = habits.id AND logged_at = CURRENT_DATE)
+			CASE
+				WHEN frequency = 'weekly' THEN
+					EXISTS(SELECT 1 FROM habit_logs WHERE habit_id = habits.id AND logged_at >= DATE('now', '-6 days'))
+				ELSE
+					EXISTS(SELECT 1 FROM habit_logs WHERE habit_id = habits.id AND logged_at = CURRENT_DATE)
+			END
 		FROM habits ORDER BY id
 	`)
 	if err != nil {
@@ -216,7 +279,7 @@ func calcStreak(dates []string) int {
 	if len(dates) == 0 {
 		return 0
 	} // if
-	now := time.Now().UTC()
+	now := time.Now()
 	today := now.Format("2006-01-02")
 	yesterday := now.AddDate(0, 0, -1).Format("2006-01-02")
 	if dates[0] != today && dates[0] != yesterday {

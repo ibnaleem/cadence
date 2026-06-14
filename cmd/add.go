@@ -18,7 +18,10 @@ var addCmd = &cobra.Command{
 
 	RunE: func(cmd *cobra.Command, args []string) error {
 		description, _ := cmd.Flags().GetString("description")
-		frequency, _ := cmd.Flags().GetString("frequency")
+		freq, _ := cmd.Flags().GetString("frequency")
+		if freq != "daily" && freq != "weekly" {
+			return fmt.Errorf("frequency must be \"daily\" or \"weekly\"")
+		} // if
 
 		db, err := util.InitDB()
 		if err != nil {
@@ -30,9 +33,14 @@ var addCmd = &cobra.Command{
 			return err
 		} // if
 
-		embedding, _ := util.Embed(args[0])
+		embedding, embedErr := util.Embed(args[0])
+		if embedErr != nil {
+			fmt.Println(theme.Yellow("!") + theme.Gray(" similarity check skipped — ollama not reachable"))
+		} else {
+			if err := util.BackfillEmbeddings(db); err != nil {
+				fmt.Println(theme.Yellow("!") + theme.Gray(" could not backfill embeddings: "+err.Error()))
+			} // if
 
-		if embedding != nil {
 			similar, sim, err := util.FindSimilarHabit(db, embedding, util.SimilarityThresholdWarn)
 			if err != nil {
 				return err
@@ -48,9 +56,9 @@ var addCmd = &cobra.Command{
 					return nil
 				} // if
 			} // if
-		} // if
+		} // else
 
-		if err := util.AddHabit(db, args[0], description, frequency, embedding); err != nil {
+		if err := util.AddHabit(db, args[0], description, freq, embedding); err != nil {
 			return err
 		} // if
 
