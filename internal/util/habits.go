@@ -84,11 +84,19 @@ func UpdateHabit(db *sql.DB, id int, name, description string) error {
 } // UpdateHabit
 
 func DeleteHabit(db *sql.DB, habitID int) error {
-	if _, err := db.Exec(`DELETE FROM habit_logs WHERE habit_id = ?`, habitID); err != nil {
+	tx, err := db.Begin()
+	if err != nil {
 		return err
-	} // if
-	_, err := db.Exec(`DELETE FROM habits WHERE id = ?`, habitID)
-	return err
+	}
+	if _, err := tx.Exec(`DELETE FROM habit_logs WHERE habit_id = ?`, habitID); err != nil {
+		tx.Rollback()
+		return err
+	}
+	if _, err := tx.Exec(`DELETE FROM habits WHERE id = ?`, habitID); err != nil {
+		tx.Rollback()
+		return err
+	}
+	return tx.Commit()
 } // DeleteHabit
 
 func LogHabit(db *sql.DB, habitID int) (bool, error) {
