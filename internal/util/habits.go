@@ -68,6 +68,14 @@ func FindSimilarHabit(db *sql.DB, embedding []float32, threshold float32) (*Habi
 	return best, bestSim, nil
 } // FindSimilarHabit
 
+func DeleteHabit(db *sql.DB, habitID int) error {
+	if _, err := db.Exec(`DELETE FROM habit_logs WHERE habit_id = ?`, habitID); err != nil {
+		return err
+	} // if
+	_, err := db.Exec(`DELETE FROM habits WHERE id = ?`, habitID)
+	return err
+} // DeleteHabit
+
 func LogHabit(db *sql.DB, habitID int) error {
 	_, err := db.Exec(
 		`INSERT INTO habit_logs (habit_id) VALUES (?)`,
