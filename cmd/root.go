@@ -4,7 +4,6 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 	"github.com/ibnaleem/cadence/internal/util"
-	"github.com/ibnaleem/cadence/internal/tui"
 )
 
 var rootCmd = &cobra.Command{
@@ -12,14 +11,18 @@ var rootCmd = &cobra.Command{
 	Short: "👾 Your terminal-based habit tracker",
 
 	RunE: func(cmd *cobra.Command, args []string) error {
-    return tui.Render(cmd.UsageString())
+    return cmd.Help()
 	}, // RunE
 } // &cobra.Command
+
+func init() {
+	rootCmd.AddCommand(setupCmd)
+} // init
 
 func Execute() {
 
 	err := rootCmd.Execute()
 
-	util.CheckError(err)	
+	util.CheckError(err)
 
 } // Execute
