@@ -42,7 +42,12 @@ var editCmd = &cobra.Command{
 		var newEmbedding []float32
 		if cmd.Flags().Changed("name") {
 			habit.Name, _ = cmd.Flags().GetString("name")
-			newEmbedding, _ = util.Embed(habit.Name)
+			emb, err := util.Embed(habit.Name)
+			if err != nil {
+				fmt.Fprintf(cmd.ErrOrStderr(), "warning: could not update embedding (%v); name-based lookup may be less accurate\n", err)
+			} else {
+				newEmbedding = emb
+			}
 		} // if
 		if cmd.Flags().Changed("description") {
 			habit.Description, _ = cmd.Flags().GetString("description")
