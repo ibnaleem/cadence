@@ -155,7 +155,7 @@ func TodayStatus(db *sql.DB) ([]HabitStatus, error) {
 func WeeklyLogs(db *sql.DB) (map[int]int, error) {
 	rows, err := db.Query(`
 		SELECT habit_id, COUNT(*) FROM habit_logs
-		WHERE logged_at >= DATE('now', 'weekday 0', '-7 days')
+		WHERE logged_at >= DATE('now', '-6 days')
 		  AND logged_at <= DATE('now')
 		GROUP BY habit_id
 	`)
