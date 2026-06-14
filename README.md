@@ -126,3 +126,7 @@ This project is licensed under the GNU General Public License - see the [LICENSE
 ## Support
 [![BuyMeACoffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/ibnaleem)
 [![Thanks.dev](https://img.shields.io/badge/thanks.dev-0a0a0a?style=for-the-badge&logo=tv-time&logoColor=white)](https://thanks.dev/u/gh/ibnaleem)
+
+                        
+## Stargazers over time
+[![Stargazers over time](https://starchart.cc/ibnaleem/cadence.svg?variant=adaptive)](https://starchart.cc/ibnaleem/cadence)
