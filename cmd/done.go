@@ -58,11 +58,16 @@ var doneCmd = &cobra.Command{
 			habitName = habit.Name
 		} // else
 
-		if err := util.LogHabit(db, habitID); err != nil {
+		inserted, err := util.LogHabit(db, habitID)
+		if err != nil {
 			return err
 		} // if
 
-		fmt.Println(theme.Green("✓") + " logged: " + theme.Bold(habitName))
+		if inserted {
+			fmt.Println(theme.Green("✓") + " logged: " + theme.Bold(habitName))
+		} else {
+			fmt.Println(theme.Yellow("!") + " already logged today: " + theme.Bold(habitName))
+		} // if
 
 		return nil
 	}, // RunE

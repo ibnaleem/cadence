@@ -39,14 +39,16 @@ var editCmd = &cobra.Command{
 			return fmt.Errorf("no habit with id %d", id)
 		} // if
 
+		var newEmbedding []float32
 		if cmd.Flags().Changed("name") {
 			habit.Name, _ = cmd.Flags().GetString("name")
+			newEmbedding, _ = util.Embed(habit.Name)
 		} // if
 		if cmd.Flags().Changed("description") {
 			habit.Description, _ = cmd.Flags().GetString("description")
 		} // if
 
-		if err := util.UpdateHabit(db, id, habit.Name, habit.Description); err != nil {
+		if err := util.UpdateHabit(db, id, habit.Name, habit.Description, newEmbedding); err != nil {
 			return err
 		} // if
 

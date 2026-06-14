@@ -78,25 +78,46 @@ func GetHabit(db *sql.DB, id int) (*Habit, error) {
 	return &h, nil
 } // GetHabit
 
-func UpdateHabit(db *sql.DB, id int, name, description string) error {
+func UpdateHabit(db *sql.DB, id int, name, description string, embedding []float32) error {
+	if embedding != nil {
+		var embJSON []byte
+		embJSON, _ = json.Marshal(embedding)
+		_, err := db.Exec(
+			`UPDATE habits SET name = ?, description = ?, embedding = ? WHERE id = ?`,
+			name, description, embJSON, id,
+		)
+		return err
+	}
 	_, err := db.Exec(`UPDATE habits SET name = ?, description = ? WHERE id = ?`, name, description, id)
 	return err
 } // UpdateHabit
 
 func DeleteHabit(db *sql.DB, habitID int) error {
-	if _, err := db.Exec(`DELETE FROM habit_logs WHERE habit_id = ?`, habitID); err != nil {
+	tx, err := db.Begin()
+	if err != nil {
 		return err
-	} // if
-	_, err := db.Exec(`DELETE FROM habits WHERE id = ?`, habitID)
-	return err
+	}
+	if _, err := tx.Exec(`DELETE FROM habit_logs WHERE habit_id = ?`, habitID); err != nil {
+		tx.Rollback()
+		return err
+	}
+	if _, err := tx.Exec(`DELETE FROM habits WHERE id = ?`, habitID); err != nil {
+		tx.Rollback()
+		return err
+	}
+	return tx.Commit()
 } // DeleteHabit
 
-func LogHabit(db *sql.DB, habitID int) error {
-	_, err := db.Exec(
-		`INSERT INTO habit_logs (habit_id) VALUES (?)`,
+func LogHabit(db *sql.DB, habitID int) (bool, error) {
+	res, err := db.Exec(
+		`INSERT OR IGNORE INTO habit_logs (habit_id) VALUES (?)`,
 		habitID,
 	)
-	return err
+	if err != nil {
+		return false, err
+	}
+	n, _ := res.RowsAffected()
+	return n > 0, nil
 } // LogHabit
 
 func HabitNameByID(db *sql.DB, habitID int) (string, error) {
@@ -134,7 +155,7 @@ func TodayStatus(db *sql.DB) ([]HabitStatus, error) {
 func WeeklyLogs(db *sql.DB) (map[int]int, error) {
 	rows, err := db.Query(`
 		SELECT habit_id, COUNT(*) FROM habit_logs
-		WHERE logged_at >= DATE('now', 'weekday 0', '-7 days')
+		WHERE logged_at >= DATE('now', '-6 days')
 		  AND logged_at <= DATE('now')
 		GROUP BY habit_id
 	`)
@@ -190,7 +211,7 @@ func calcStreak(dates []string) int {
 	if len(dates) == 0 {
 		return 0
 	} // if
-	now := time.Now().UTC()
+	now := time.Now()
 	today := now.Format("2006-01-02")
 	yesterday := now.AddDate(0, 0, -1).Format("2006-01-02")
 	if dates[0] != today && dates[0] != yesterday {
