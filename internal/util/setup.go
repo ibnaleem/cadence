@@ -56,5 +56,10 @@ func SetupSchema(db *sql.DB) error {
 	// ponytail: ignore error — SQLite has no ADD COLUMN IF NOT EXISTS
 	db.Exec(`ALTER TABLE habits ADD COLUMN embedding TEXT`)
 
+	// Backfill unique constraint for existing DBs that predate the UNIQUE column definition.
+	// CREATE TABLE IF NOT EXISTS is a no-op on existing tables, so the UNIQUE(habit_id, logged_at)
+	// in the schema above only applies to newly created DBs. This index is idempotent and covers both cases.
+	db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_habit_logs_unique ON habit_logs(habit_id, logged_at)`)
+
 	return nil
 } // SetupSchema
