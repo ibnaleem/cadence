@@ -53,11 +53,20 @@ var rootCmd = &cobra.Command{
 		)
 		fmt.Println()
 
+		streaks, err := util.AllStreaks(db)
+		if err != nil {
+			return err
+		} // if
+
 		for _, h := range habits {
+			streak := ""
+			if s := streaks[h.ID]; s > 0 {
+				streak = "  " + fmt.Sprintf("🔥%s", theme.Bold(fmt.Sprintf("%d", s)))
+			} // if
 			if h.DoneToday {
-				fmt.Printf("  %s  %s  %s\n", theme.Green("✓"), theme.Green(theme.Bold(h.Name)), theme.Gray("["+h.Frequency+"]"))
+				fmt.Printf("  %s  %s  %s%s\n", theme.Green("✓"), theme.Green(theme.Bold(h.Name)), theme.Gray("["+h.Frequency+"]"), streak)
 			} else {
-				fmt.Printf("  %s  %s  %s\n", theme.Gray("○"), theme.Gray(h.Name), theme.Gray("["+h.Frequency+"]"))
+				fmt.Printf("  %s  %s  %s%s\n", theme.Gray("○"), theme.Gray(h.Name), theme.Gray("["+h.Frequency+"]"), streak)
 			} // if
 		} // for
 
@@ -123,6 +132,7 @@ func init() {
 	rootCmd.AddCommand(addCmd)
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(doneCmd)
+	rootCmd.AddCommand(streakCmd)
 } // init
 
 func Execute() {

@@ -134,9 +134,9 @@ func WeeklyLogs(db *sql.DB) (map[int]int, error) {
 
 func AllStreaks(db *sql.DB) (map[int]int, error) {
 	rows, err := db.Query(`
-		SELECT habit_id, logged_at FROM habit_logs
-		GROUP BY habit_id, logged_at
-		ORDER BY habit_id, logged_at DESC
+		SELECT habit_id, date(logged_at) FROM habit_logs
+		GROUP BY habit_id, date(logged_at)
+		ORDER BY habit_id, date(logged_at) DESC
 	`)
 	if err != nil {
 		return nil, err
@@ -167,8 +167,9 @@ func calcStreak(dates []string) int {
 	if len(dates) == 0 {
 		return 0
 	} // if
-	today := time.Now().Format("2006-01-02")
-	yesterday := time.Now().AddDate(0, 0, -1).Format("2006-01-02")
+	now := time.Now().UTC()
+	today := now.Format("2006-01-02")
+	yesterday := now.AddDate(0, 0, -1).Format("2006-01-02")
 	if dates[0] != today && dates[0] != yesterday {
 		return 0
 	} // if
