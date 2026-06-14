@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -31,8 +33,10 @@ var undoCmd = &cobra.Command{
 		} // if
 
 		habitName, err := util.HabitNameByID(db, id)
-		if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
 			return fmt.Errorf("no habit with id %d — run `cadence list` to see habit IDs", id)
+		} else if err != nil {
+			return fmt.Errorf("looking up habit %d: %w", id, err)
 		} // if
 
 		removed, err := util.UnlogHabit(db, id)

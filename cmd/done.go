@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -31,8 +33,10 @@ var doneCmd = &cobra.Command{
 
 		if id, err := strconv.Atoi(args[0]); err == nil {
 			habitName, err = util.HabitNameByID(db, id)
-			if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
 				return fmt.Errorf("no habit with id %d — run `cadence list` to see habit IDs", id)
+			} else if err != nil {
+				return fmt.Errorf("looking up habit %d: %w", id, err)
 			} // if
 			habitID = id
 		} else {
@@ -61,8 +65,12 @@ var doneCmd = &cobra.Command{
 
 		dateStr, _ := cmd.Flags().GetString("date")
 		if dateStr != "" {
-			if _, err := time.Parse("2006-01-02", dateStr); err != nil {
+			parsed, err := time.Parse("2006-01-02", dateStr)
+			if err != nil {
 				return fmt.Errorf("invalid date %q — use YYYY-MM-DD format", dateStr)
+			} // if
+			if parsed.After(time.Now()) {
+				return fmt.Errorf("cannot backfill a future date: %s", dateStr)
 			} // if
 		} // if
 

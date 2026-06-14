@@ -3,6 +3,7 @@ package util
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"time"
 )
 
@@ -125,7 +126,10 @@ func LogHabit(db *sql.DB, habitID int, date string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	n, _ := res.RowsAffected()
+	n, err := res.RowsAffected()
+	if err != nil {
+		return false, fmt.Errorf("reading rows affected: %w", err)
+	}
 	return n > 0, nil
 } // LogHabit
 
@@ -137,7 +141,10 @@ func UnlogHabit(db *sql.DB, habitID int) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	n, _ := res.RowsAffected()
+	n, err := res.RowsAffected()
+	if err != nil {
+		return false, fmt.Errorf("reading rows affected: %w", err)
+	}
 	return n > 0, nil
 } // UnlogHabit
 
