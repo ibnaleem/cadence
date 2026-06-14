@@ -132,6 +132,7 @@ func init() {
 	rootCmd.AddCommand(addCmd)
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(doneCmd)
+	rootCmd.AddCommand(undoCmd)
 	rootCmd.AddCommand(streakCmd)
 	rootCmd.AddCommand(deleteCmd)
 	rootCmd.AddCommand(editCmd)

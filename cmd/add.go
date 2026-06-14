@@ -18,7 +18,10 @@ var addCmd = &cobra.Command{
 
 	RunE: func(cmd *cobra.Command, args []string) error {
 		description, _ := cmd.Flags().GetString("description")
-		frequency, _ := cmd.Flags().GetString("frequency")
+		freq, _ := cmd.Flags().GetString("frequency")
+		if freq != "daily" && freq != "weekly" {
+			return fmt.Errorf("frequency must be \"daily\" or \"weekly\"")
+		} // if
 
 		db, err := util.InitDB()
 		if err != nil {
@@ -55,7 +58,7 @@ var addCmd = &cobra.Command{
 			} // if
 		} // else
 
-		if err := util.AddHabit(db, args[0], description, frequency, embedding); err != nil {
+		if err := util.AddHabit(db, args[0], description, freq, embedding); err != nil {
 			return err
 		} // if
 
